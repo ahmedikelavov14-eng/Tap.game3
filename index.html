@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Хамстер Тапай - Полная Версия</title>
+    <title>Хамстер Тапай - Автоматик</title>
+    <script src="https://telegram.org"></script>
     <style>
         :root {
             --bg-color: #1c1f24;
             --main-yellow: #f3ba2f;
             --card-bg: #2b2f36;
             --accent-green: #4caf50;
-            --text-gray: #888;
         }
         body {
             background-color: var(--bg-color);
@@ -31,7 +31,6 @@
         #level-display { color: var(--accent-green); font-weight: bold; margin-bottom: 5px; text-transform: uppercase; font-size: 14px; }
         #balance { font-size: 48px; font-weight: bold; color: var(--main-yellow); line-height: 1; margin: 5px 0; }
         .record-badge { color: #ffd700; font-size: 14px; opacity: 0.9; }
-        .income-info { font-size: 14px; color: var(--text-gray); margin-top: 5px; }
 
         /* Хомяк */
         .coin-container {
@@ -61,15 +60,15 @@
         }
         #energy-fill { width: 100%; height: 100%; background: var(--main-yellow); transition: width 0.2s; }
 
-        /* Табы (Меню) */
+        /* Меню */
         .tabs { display: flex; gap: 8px; width: 100%; max-width: 420px; }
         .tab-btn {
             flex: 1; padding: 12px 5px; border: none; background: #3e444e;
-            color: white; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 12px;
+            color: white; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 11px;
         }
         .tab-btn.active { background: var(--main-yellow); color: black; }
 
-        /* Списки и Карточки */
+        /* Карточки */
         .shop-grid {
             display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
             width: 100%; max-width: 420px; margin-top: 15px;
@@ -78,8 +77,8 @@
             background: var(--card-bg); padding: 15px; border-radius: 15px;
             text-align: center; border: 1px solid #3e444e; display: flex; flex-direction: column;
         }
-        .card h3 { margin: 0; font-size: 14px; }
-        .card p { margin: 6px 0; font-size: 11px; color: var(--text-gray); }
+        .card h3 { margin: 0; font-size: 13px; }
+        .card p { margin: 6px 0; font-size: 10px; color: #888; }
         .card button {
             margin-top: auto; padding: 10px; border: none; border-radius: 8px;
             font-weight: bold; cursor: pointer;
@@ -90,7 +89,7 @@
 
         .hidden { display: none; }
 
-        /* Анимация +Число */
+        /* Анимация клика */
         .floating-text {
             position: absolute; color: white; font-weight: bold; font-size: 32px;
             pointer-events: none; animation: floatUp 0.7s ease-out forwards;
@@ -107,8 +106,8 @@
     <div class="header">
         <div id="level-display">Ранг: Загрузка...</div>
         <div id="balance">0</div>
-        <div class="record-badge">🏆 Рекорд за всё время: <span id="highscore">0</span></div>
-        <div class="income-info">Прибыль в сек: +<span id="pps">0</span></div>
+        <div class="record-badge">🏆 Рекорд: <span id="highscore">0</span></div>
+        <div style="font-size: 14px; color: #888; margin-top: 5px;">Прибыль: +<span id="pps">0</span> /сек</div>
     </div>
 
     <div class="coin-container" id="clicker">
@@ -126,64 +125,67 @@
         <button class="tab-btn" id="tab-friends-btn" onclick="showTab('friends')">Друзья</button>
     </div>
 
-    <!-- Вкладки контента -->
     <div id="tab-upgrades" class="shop-grid"></div>
     <div id="tab-wardrobe" class="shop-grid hidden"></div>
     <div id="tab-friends" class="shop-grid hidden" style="grid-template-columns: 1fr;">
         <div class="card" style="padding: 25px;">
-            <h3>Пригласи друзей</h3>
-            <p>Получи 1,500 монет мгновенно!</p>
-            <div style="font-size: 60px; margin: 15px;">👥</div>
-            <button class="btn-buy" onclick="inviteFriend()" style="margin-bottom: 12px; font-size: 16px;">Позвать друга</button>
-            <button class="btn-equip" onclick="claimFriendBonus()">Забрать бонус (+1500)</button>
+            <h3>Приглашай и зарабатывай</h3>
+            <p>За каждого друга по ссылке — <b>1,500</b> монет автоматом!</p>
+            <div style="font-size: 60px; margin: 15px;">🤝</div>
+            <button class="btn-buy" onclick="inviteFriend()" style="font-size: 16px;">Поделиться ссылкой</button>
+            <p style="margin-top: 15px; font-size: 10px;">Бонус начисляется другу при первом входе.</p>
         </div>
     </div>
 
     <script>
-        // --- 1. ЗАЩИТА ДАННЫХ И МИГРАЦИЯ ---
-        const SAVE_KEY = 'hamster_tapai_v1';
+        // --- 1. ДАННЫЕ И МИГРАЦИЯ ---
+        const SAVE_KEY = 'ht_final_save_v2';
         const DEFAULT_STATE = {
-            balance: 0,
-            highscore: 0,
-            energy: 1000,
-            pps: 0,
-            currentSkin: '🐹',
-            ownedSkins: ['🐹'],
-            upgrades: {},
-            lastOnline: Date.now()
+            balance: 0, highscore: 0, energy: 1000, pps: 0,
+            currentSkin: '🐹', ownedSkins: ['🐹'], upgrades: {},
+            bonusReceived: false
         };
 
-        // Загрузка
-        let savedData = JSON.parse(localStorage.getItem(SAVE_KEY)) || {};
-        let state = { ...DEFAULT_STATE, ...savedData };
+        let saved = JSON.parse(localStorage.getItem(SAVE_KEY)) || {};
+        let state = { ...DEFAULT_STATE, ...saved };
 
-        // --- 2. КОНФИГУРАЦИЯ ---
         const levels = [
             { name: "Новичок", threshold: 0 },
-            { name: "Тапер-Любитель", threshold: 2000 },
-            { name: "Бизнес-Хомяк", threshold: 15000 },
-            { name: "Директор Норки", threshold: 80000 },
-            { name: "Крипто-Магнат", threshold: 300000 },
-            { name: "Повелитель Семян", threshold: 1000000 }
+            { name: "Тапер-Бронза", threshold: 2000 },
+            { name: "Серебряный Хома", threshold: 15000 },
+            { name: "Золотой Босс", threshold: 100000 },
+            { name: "Король Тапа", threshold: 1000000 }
         ];
 
         const shopItems = [
-            { id: "click_power", name: "⚡️ Сила Тапа", baseCost: 40, income: 0, isClick: true },
-            { id: "it_dev", name: "💻 Разработчик", baseCost: 150, income: 2 },
-            { id: "marketing", name: "📊 Маркетинг", baseCost: 1000, income: 10 },
-            { id: "mining_farm", name: "⛏ Ферма", baseCost: 6000, income: 65 }
+            { id: "click_up", name: "⚡️ Сила Клика", baseCost: 50, income: 0, isClick: true },
+            { id: "it_team", name: "💻 IT Отдел", baseCost: 150, income: 2 },
+            { id: "ads", name: "📺 Реклама", baseCost: 1000, income: 12 },
+            { id: "bank", name: "🏦 Банк", baseCost: 10000, income: 120 }
         ];
 
         const skins = [
-            { icon: '🐹', name: 'Классика', price: 0 },
-            { icon: '🤵', name: 'Бизнесмен', price: 1000 },
-            { icon: '😎', name: 'Крутой', price: 10000 },
-            { icon: '👑', name: 'Король', price: 50000 },
-            { icon: '👽', name: 'Пришелец', price: 150000 },
-            { icon: '🤖', name: 'Робо-Тап', price: 500000 }
+            { icon: '🐹', name: 'Обычный', price: 0 },
+            { icon: '🤵', name: 'Магнат', price: 2500 },
+            { icon: '😎', name: 'Стиляга', price: 15000 },
+            { icon: '👑', name: 'Монарх', price: 100000 }
         ];
 
-        // --- 3. ЛОГИКА ИГРЫ ---
+        // --- 2. АВТОМАТИЧЕСКИЙ БОНУС ---
+        function checkReferral() {
+            const urlParams = new URLSearchParams(window.location.search);
+            // Telegram передает параметры через tgWebAppStartParam
+            const isRef = urlParams.get('tgWebAppStartParam'); 
+            
+            if (isRef && !state.bonusReceived) {
+                state.balance += 1500;
+                state.bonusReceived = true;
+                alert("🎉 Вы получили 1,500 монет по реферальной ссылке!");
+                updateUI();
+            }
+        }
+
+        // --- 3. ЛОГИКА ---
         function getLevel() {
             let res = levels[0];
             levels.forEach(l => { if (state.highscore >= l.threshold) res = l; });
@@ -192,25 +194,22 @@
 
         function getCost(item) {
             const lv = state.upgrades[item.id] || 0;
-            return Math.floor(item.baseCost * Math.pow(1.28, lv));
+            return Math.floor(item.baseCost * Math.pow(1.3, lv));
         }
 
         function updateUI() {
-            const currentLevel = getLevel();
-            const maxEng = 1000 + (levels.indexOf(currentLevel) * 500);
+            const lvl = getLevel();
+            const maxEng = 1000 + (levels.indexOf(lvl) * 500);
 
-            // Тексты
             document.getElementById('balance').innerText = Math.floor(state.balance).toLocaleString();
             if (state.balance > state.highscore) state.highscore = state.balance;
             document.getElementById('highscore').innerText = Math.floor(state.highscore).toLocaleString();
-            document.getElementById('level-display').innerText = `Ранг: ${currentLevel.name}`;
+            document.getElementById('level-display').innerText = `Ранг: ${lvl.name}`;
             document.getElementById('pps').innerText = state.pps.toFixed(1);
             document.getElementById('energy-text').innerText = Math.floor(state.energy);
             document.getElementById('max-energy-text').innerText = maxEng;
-            document.getElementById('hamster-view').innerText = state.currentSkin;
-            
-            // Прогресс-бар энергии
             document.getElementById('energy-fill').style.width = (state.energy / (maxEng / 100)) + '%';
+            document.getElementById('hamster-view').innerText = state.currentSkin;
 
             localStorage.setItem(SAVE_KEY, JSON.stringify(state));
             renderShop();
@@ -224,15 +223,11 @@
                 const cost = getCost(item);
                 const lv = state.upgrades[item.id] || 0;
                 const canBuy = state.balance >= cost;
-                container.innerHTML += `
-                    <div class="card">
-                        <h3>${item.name}</h3>
-                        <p>${item.isClick ? '+ Сила клика' : '+'+item.income+'/сек'} (Ур. ${lv})</p>
-                        <button class="${canBuy ? 'btn-buy' : 'btn-disabled'}" 
-                                onclick="buyUpgrade('${item.id}')" ${!canBuy ? 'disabled' : ''}>
-                            💰 ${cost.toLocaleString()}
-                        </button>
-                    </div>`;
+                container.innerHTML += `<div class="card">
+                    <h3>${item.name}</h3>
+                    <p>${item.isClick ? '+ Сила клика' : '+'+item.income+'/с'} (Ур. ${lv})</p>
+                    <button class="${canBuy ? 'btn-buy' : 'btn-disabled'}" onclick="buyUpgrade('${item.id}')" ${!canBuy ? 'disabled' : ''}>💰 ${cost.toLocaleString()}</button>
+                </div>`;
             });
         }
 
@@ -240,25 +235,15 @@
             const container = document.getElementById('tab-wardrobe');
             container.innerHTML = '';
             skins.forEach(skin => {
-                const isOwned = state.ownedSkins.includes(skin.icon);
-                const isEquipped = state.currentSkin === skin.icon;
-                const canBuy = state.balance >= skin.price;
-                
-                let btn;
-                if (isEquipped) btn = `<button class="btn-disabled" disabled>Надето</button>`;
-                else if (isOwned) btn = `<button class="btn-equip" onclick="equipSkin('${skin.icon}')">Надеть</button>`;
-                else btn = `<button class="${canBuy ? 'btn-buy' : 'btn-disabled'}" onclick="buySkin('${skin.icon}', ${skin.price})" ${!canBuy ? 'disabled' : ''}>💰 ${skin.price.toLocaleString()}</button>`;
-
-                container.innerHTML += `
-                    <div class="card">
-                        <div style="font-size:45px; margin-bottom:5px;">${skin.icon}</div>
-                        <h3>${skin.name}</h3>
-                        ${btn}
-                    </div>`;
+                const owned = state.ownedSkins.includes(skin.icon);
+                const active = state.currentSkin === skin.icon;
+                let btn = active ? `<button class="btn-disabled" disabled>Надето</button>` :
+                          owned ? `<button class="btn-equip" onclick="equipSkin('${skin.icon}')">Надеть</button>` :
+                          `<button class="${state.balance >= skin.price ? 'btn-buy' : 'btn-disabled'}" onclick="buySkin('${skin.icon}', ${skin.price})">💰 ${skin.price.toLocaleString()}</button>`;
+                container.innerHTML += `<div class="card"><div style="font-size:40px">${skin.icon}</div><h3>${skin.name}</h3>${btn}</div>`;
             });
         }
 
-        // --- 4. ДЕЙСТВИЯ ---
         window.buyUpgrade = (id) => {
             const item = shopItems.find(i => i.id === id);
             const cost = getCost(item);
@@ -291,52 +276,42 @@
         };
 
         window.inviteFriend = () => {
-            const text = encodeURIComponent("Заходи в Хамстер Тапай! Давай кликать вместе!");
-            window.open(`https://t.me{text}`, '_blank');
+            const botUser = "YOUR_BOT_NAME"; // ЗАМЕНИ НА ИМЯ БОТА
+            const link = `https://t.me{botUser}?startapp=referral`;
+            window.open(`https://t.me{link}&text=Давай тапать вместе!`, '_blank');
         };
 
-        window.claimFriendBonus = () => {
-            state.balance += 1500;
-            updateUI();
-            alert("Бонус 1,500 монет зачислен!");
-        };
-
-        // Клик
         document.getElementById('clicker').addEventListener('click', (e) => {
-            const power = 1 + (state.upgrades['click_power'] || 0);
+            const pwr = 1 + (state.upgrades['click_up'] || 0);
             if (state.energy >= 1) {
-                state.balance += power;
+                state.balance += pwr;
                 state.energy -= 1;
-                showFloat(e.clientX, e.clientY, power);
+                showFloat(e.clientX, e.clientY, pwr);
                 updateUI();
             }
         });
 
-        function showFloat(x, y, val) {
+        function showFloat(x, y, v) {
             const el = document.createElement('div');
-            el.className = 'floating-text'; el.innerText = `+${val}`;
+            el.className = 'floating-text'; el.innerText = `+${v}`;
             el.style.left = x + 'px'; el.style.top = y + 'px';
             document.body.appendChild(el);
             setTimeout(() => el.remove(), 700);
         }
 
-        // --- 5. ЦИКЛ ИГРЫ (10 раз в сек) ---
         setInterval(() => {
-            // Пассивный доход
             state.balance += (state.pps / 10);
-            
-            // Реген энергии
-            const currentLevel = getLevel();
-            const maxEng = 1000 + (levels.indexOf(currentLevel) * 500);
-            if (state.energy < maxEng) {
-                state.energy = Math.min(maxEng, state.energy + 1.5);
-            }
-            
+            const maxE = 1000 + (levels.indexOf(getLevel()) * 500);
+            if (state.energy < maxE) state.energy = Math.min(maxE, state.energy + 1.5);
             updateUI();
         }, 100);
 
-        updateUI();
+        // Инициализация при загрузке
+        window.onload = () => {
+            checkReferral();
+            updateUI();
+            if (window.Telegram?.WebApp) window.Telegram.WebApp.expand();
+        };
     </script>
 </body>
 </html>
-    

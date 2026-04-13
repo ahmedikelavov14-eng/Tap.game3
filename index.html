@@ -2,62 +2,297 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tap Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hamster Ultimate Clone</title>
     <style>
+        :root {
+            --bg-color: #1c1f24;
+            --main-yellow: #f3ba2f;
+            --card-bg: #2b2f36;
+            --accent-green: #4caf50;
+        }
         body {
-            margin: 0;
+            background-color: var(--bg-color);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: white; /* Белый фон */
-            font-family: Arial, sans-serif;
-            overflow: hidden;
+            margin: 0;
+            padding: 20px;
+            overflow-x: hidden;
+            user-select: none;
         }
-        #score {
-            font-size: 48px;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-        #tap-button {
+
+        /* Статистика */
+        .header { text-align: center; margin-bottom: 10px; }
+        #balance { font-size: 48px; font-weight: bold; color: var(--main-yellow); line-height: 1; }
+        .record-badge { color: #ffd700; font-size: 16px; margin-top: 5px; }
+        .income-info { font-size: 14px; color: #888; margin-top: 5px; }
+
+        /* Кликер */
+        .coin-container {
+            position: relative;
             width: 200px;
             height: 200px;
-            background-color: #f0f0f0;
-            border-radius: 50%;
-            border: 5px solid #333;
-            font-size: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin: 20px 0;
             cursor: pointer;
-            user-select: none;
-            transition: transform 0.1s;
+            transition: transform 0.05s;
         }
-        #tap-button:active {
-            transform: scale(0.9);
+        .coin-container:active { transform: scale(0.92); }
+        .hamster-btn {
+            width: 100%; height: 100%;
+            background: radial-gradient(circle, #f3ba2f 0%, #a67c00 100%);
+            border-radius: 50%;
+            border: 6px solid #3e444e;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 80px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.4);
+        }
+
+        /* Энергия */
+        .energy-section { width: 100%; max-width: 300px; text-align: center; margin-bottom: 20px; }
+        .energy-bar {
+            width: 100%; height: 12px; background: #3e444e;
+            border-radius: 6px; overflow: hidden; margin: 5px 0;
+        }
+        #energy-fill { width: 100%; height: 100%; background: var(--main-yellow); transition: width 0.1s; }
+
+        /* Табы */
+        .tabs { display: flex; gap: 10px; width: 100%; max-width: 400px; }
+        .tab-btn {
+            flex: 1; padding: 12px; border: none; background: #3e444e;
+            color: white; border-radius: 10px; cursor: pointer; font-weight: bold;
+        }
+        .tab-btn.active { background: var(--main-yellow); color: black; }
+
+        /* Сетка магазина */
+        .shop-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            width: 100%; max-width: 400px; margin-top: 15px;
+        }
+        .card {
+            background: var(--card-bg); padding: 15px; border-radius: 12px;
+            text-align: center; border: 1px solid #3e444e; display: flex; flex-direction: column;
+        }
+        .card h3 { margin: 0; font-size: 14px; }
+        .card p { margin: 5px 0; font-size: 11px; color: #aaa; }
+        .card button {
+            margin-top: auto; padding: 8px; border: none; border-radius: 6px;
+            font-weight: bold; cursor: pointer;
+        }
+        .btn-buy { background: var(--main-yellow); color: black; }
+        .btn-equip { background: var(--accent-green); color: white; }
+        .btn-disabled { background: #555; color: #888; cursor: not-allowed; }
+
+        .hidden { display: none; }
+
+        /* Анимация +1 */
+        .floating-text {
+            position: absolute; color: white; font-weight: bold; font-size: 24px;
+            pointer-events: none; animation: floatUp 0.6s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-80px); }
         }
     </style>
 </head>
 <body>
 
-    <div id="score">0</div>
-    <div id="tap-button">👟</div>
+    <div class="header">
+        <div id="balance">0</div>
+        <div class="record-badge">🏆 Рекорд: <span id="highscore">0</span></div>
+        <div class="income-info">Прибыль в сек: +<span id="pps">0</span></div>
+    </div>
+
+    <div class="coin-container" id="clicker">
+        <div class="hamster-btn" id="hamster-view">🐹</div>
+    </div>
+
+    <div class="energy-section">
+        <div class="energy-bar"><div id="energy-fill"></div></div>
+        <small>⚡️ <span id="energy-text">1000</span> / 1000</small>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" id="tab-upg-btn" onclick="showTab('upgrades')">Бизнес</button>
+        <button class="tab-btn" id="tab-ward-btn" onclick="showTab('wardrobe')">Одежда</button>
+    </div>
+
+    <!-- Вкладка улучшений -->
+    <div id="tab-upgrades" class="shop-grid"></div>
+
+    <!-- Вкладка одежды -->
+    <div id="tab-wardrobe" class="shop-grid hidden"></div>
 
     <script>
-        let score = parseInt(localStorage.getItem('tap_score')) || 0;
-        const scoreElement = document.getElementById('score');
-        const btn = document.getElementById('tap-button');
+        // --- ДАННЫЕ ИГРЫ ---
+        let state = {
+            balance: parseFloat(localStorage.getItem('h_bal')) || 0,
+            highscore: parseFloat(localStorage.getItem('h_high')) || 0,
+            energy: parseFloat(localStorage.getItem('h_eng')) || 1000,
+            pps: parseFloat(localStorage.getItem('h_pps')) || 0,
+            currentSkin: localStorage.getItem('h_skin') || '🐹',
+            ownedSkins: JSON.parse(localStorage.getItem('h_owned')) || ['🐹'],
+            upgrades: JSON.parse(localStorage.getItem('h_upg')) || {}
+        };
 
-        scoreElement.innerText = score;
+        const shopItems = [
+            { id: "it_team", name: "👨‍💻 IT Команда", baseCost: 50, income: 1 },
+            { id: "marketing", name: "📢 Маркетинг", baseCost: 250, income: 5 },
+            { id: "exchange", name: "🏦 Биржа", baseCost: 1000, income: 15 }
+        ];
 
-        btn.addEventListener('click', () => {
-            score++;
-            scoreElement.innerText = score;
-            // Сохранение в браузере (даже если закрыть вкладку)
-            localStorage.setItem('tap_score', score);
+        const skins = [
+            { icon: '🐹', name: 'Обычный', price: 0 },
+            { icon: '🤵', name: 'Бизнесмен', price: 500 },
+            { icon: '😎', name: 'Крутой', price: 2500 },
+            { icon: '👑', name: 'Король', price: 10000 }
+        ];
+
+        // --- ЛОГИКА ---
+
+        function getCost(item) {
+            const count = state.upgrades[item.id] || 0;
+            return Math.floor(item.baseCost * Math.pow(1.15, count));
+        }
+
+        function updateUI() {
+            // Баланс и Рекорд
+            document.getElementById('balance').innerText = Math.floor(state.balance).toLocaleString();
+            if (state.balance > state.highscore) {
+                state.highscore = state.balance;
+                localStorage.setItem('h_high', state.highscore);
+            }
+            document.getElementById('highscore').innerText = Math.floor(state.highscore).toLocaleString();
+            
+            // PPS и Энергия
+            document.getElementById('pps').innerText = state.pps.toFixed(1);
+            document.getElementById('energy-text').innerText = Math.floor(state.energy);
+            document.getElementById('energy-fill').style.width = (state.energy / 10) + '%';
+            
+            // Скин
+            document.getElementById('hamster-view').innerText = state.currentSkin;
+
+            // Сохранение
+            localStorage.setItem('h_bal', state.balance);
+            localStorage.setItem('h_eng', state.energy);
+            localStorage.setItem('h_pps', state.pps);
+            localStorage.setItem('h_skin', state.currentSkin);
+            localStorage.setItem('h_owned', JSON.stringify(state.ownedSkins));
+            localStorage.setItem('h_upg', JSON.stringify(state.upgrades));
+
+            renderShop();
+            renderWardrobe();
+        }
+
+        function renderShop() {
+            const container = document.getElementById('tab-upgrades');
+            container.innerHTML = '';
+            shopItems.forEach(item => {
+                const cost = getCost(item);
+                const lv = state.upgrades[item.id] || 0;
+                container.innerHTML += `
+                    <div class="card">
+                        <h3>${item.name}</h3>
+                        <p>+${item.income}/сек (Лвл ${lv})</p>
+                        <button class="${state.balance >= cost ? 'btn-buy' : 'btn-disabled'}" 
+                                onclick="buyUpgrade('${item.id}')" ${state.balance < cost ? 'disabled' : ''}>
+                            💰 ${cost}
+                        </button>
+                    </div>`;
+            });
+        }
+
+        function renderWardrobe() {
+            const container = document.getElementById('tab-wardrobe');
+            container.innerHTML = '';
+            skins.forEach(skin => {
+                const isOwned = state.ownedSkins.includes(skin.icon);
+                const isEquipped = state.currentSkin === skin.icon;
+                let btnHtml = '';
+
+                if (isEquipped) {
+                    btnHtml = `<button class="btn-disabled" disabled>Надето</button>`;
+                } else if (isOwned) {
+                    btnHtml = `<button class="btn-equip" onclick="equipSkin('${skin.icon}')">Надеть</button>`;
+                } else {
+                    btnHtml = `<button class="${state.balance >= skin.price ? 'btn-buy' : 'btn-disabled'}" 
+                                onclick="buySkin('${skin.icon}', ${skin.price})" 
+                                ${state.balance < skin.price ? 'disabled' : ''}>💰 ${skin.price}</button>`;
+                }
+
+                container.innerHTML += `
+                    <div class="card">
+                        <div style="font-size:40px">${skin.icon}</div>
+                        <h3>${skin.name}</h3>
+                        ${btnHtml}
+                    </div>`;
+            });
+        }
+
+        // --- ДЕЙСТВИЯ ---
+
+        window.buyUpgrade = (id) => {
+            const item = shopItems.find(i => i.id === id);
+            const cost = getCost(item);
+            if (state.balance >= cost) {
+                state.balance -= cost;
+                state.upgrades[id] = (state.upgrades[id] || 0) + 1;
+                state.pps += item.income;
+                updateUI();
+            }
+        };
+
+        window.buySkin = (icon, price) => {
+            if (state.balance >= price) {
+                state.balance -= price;
+                state.ownedSkins.push(icon);
+                state.currentSkin = icon;
+                updateUI();
+            }
+        };
+
+        window.equipSkin = (icon) => {
+            state.currentSkin = icon;
+            updateUI();
+        };
+
+        window.showTab = (tab) => {
+            document.getElementById('tab-upgrades').classList.toggle('hidden', tab !== 'upgrades');
+            document.getElementById('tab-wardrobe').classList.toggle('hidden', tab !== 'wardrobe');
+            document.getElementById('tab-upg-btn').classList.toggle('active', tab === 'upgrades');
+            document.getElementById('tab-ward-btn').classList.toggle('active', tab === 'wardrobe');
+        };
+
+        document.getElementById('clicker').addEventListener('click', (e) => {
+            if (state.energy >= 1) {
+                state.balance += 1;
+                state.energy -= 1;
+                showPlusOne(e.clientX, e.clientY);
+                updateUI();
+            }
         });
+
+        function showPlusOne(x, y) {
+            const el = document.createElement('div');
+            el.className = 'floating-text';
+            el.innerText = '+1';
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 600);
+        }
+
+        // Цикл игры (10 раз в секунду)
+        setInterval(() => {
+            state.balance += (state.pps / 10);
+            if (state.energy < 1000) state.energy = Math.min(1000, state.energy + 0.5);
+            updateUI();
+        }, 100);
+
+        updateUI();
     </script>
 </body>
 </html>

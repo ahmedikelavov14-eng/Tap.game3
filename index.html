@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Хамстер Тапай</title>
+    <title>Хамстер Тапай - Полная Версия</title>
     <style>
         :root {
             --bg-color: #1c1f24;
             --main-yellow: #f3ba2f;
             --card-bg: #2b2f36;
             --accent-green: #4caf50;
+            --text-gray: #888;
         }
         body {
             background-color: var(--bg-color);
@@ -22,20 +23,21 @@
             padding: 20px;
             overflow-x: hidden;
             user-select: none;
+            touch-action: manipulation;
         }
 
-        /* Шапка игры */
-        .header { text-align: center; margin-bottom: 10px; }
-        #level-display { color: var(--accent-green); font-weight: bold; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        /* Шапка */
+        .header { text-align: center; margin-bottom: 10px; width: 100%; }
+        #level-display { color: var(--accent-green); font-weight: bold; margin-bottom: 5px; text-transform: uppercase; font-size: 14px; }
         #balance { font-size: 48px; font-weight: bold; color: var(--main-yellow); line-height: 1; margin: 5px 0; }
-        .record-badge { color: #ffd700; font-size: 14px; }
-        .income-info { font-size: 14px; color: #888; margin-top: 5px; }
+        .record-badge { color: #ffd700; font-size: 14px; opacity: 0.9; }
+        .income-info { font-size: 14px; color: var(--text-gray); margin-top: 5px; }
 
-        /* Главный герой - Хомяк */
+        /* Хомяк */
         .coin-container {
             position: relative;
-            width: 200px;
-            height: 200px;
+            width: 220px;
+            height: 220px;
             margin: 20px 0;
             cursor: pointer;
             transition: transform 0.05s;
@@ -47,39 +49,39 @@
             border-radius: 50%;
             border: 6px solid #3e444e;
             display: flex; align-items: center; justify-content: center;
-            font-size: 80px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            font-size: 90px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
         }
 
         /* Энергия */
-        .energy-section { width: 100%; max-width: 300px; text-align: center; margin-bottom: 20px; }
+        .energy-section { width: 100%; max-width: 320px; text-align: center; margin-bottom: 20px; }
         .energy-bar {
-            width: 100%; height: 12px; background: #3e444e;
-            border-radius: 6px; overflow: hidden; margin: 5px 0;
+            width: 100%; height: 14px; background: #3e444e;
+            border-radius: 7px; overflow: hidden; margin: 8px 0;
         }
         #energy-fill { width: 100%; height: 100%; background: var(--main-yellow); transition: width 0.2s; }
 
-        /* Вкладки */
-        .tabs { display: flex; gap: 10px; width: 100%; max-width: 400px; }
+        /* Табы (Меню) */
+        .tabs { display: flex; gap: 8px; width: 100%; max-width: 420px; }
         .tab-btn {
-            flex: 1; padding: 12px; border: none; background: #3e444e;
-            color: white; border-radius: 10px; cursor: pointer; font-weight: bold;
+            flex: 1; padding: 12px 5px; border: none; background: #3e444e;
+            color: white; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 12px;
         }
         .tab-btn.active { background: var(--main-yellow); color: black; }
 
-        /* Списки товаров */
+        /* Списки и Карточки */
         .shop-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-            width: 100%; max-width: 400px; margin-top: 15px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+            width: 100%; max-width: 420px; margin-top: 15px;
         }
         .card {
-            background: var(--card-bg); padding: 15px; border-radius: 12px;
+            background: var(--card-bg); padding: 15px; border-radius: 15px;
             text-align: center; border: 1px solid #3e444e; display: flex; flex-direction: column;
         }
         .card h3 { margin: 0; font-size: 14px; }
-        .card p { margin: 5px 0; font-size: 11px; color: #aaa; }
+        .card p { margin: 6px 0; font-size: 11px; color: var(--text-gray); }
         .card button {
-            margin-top: auto; padding: 8px; border: none; border-radius: 6px;
+            margin-top: auto; padding: 10px; border: none; border-radius: 8px;
             font-weight: bold; cursor: pointer;
         }
         .btn-buy { background: var(--main-yellow); color: black; }
@@ -88,24 +90,25 @@
 
         .hidden { display: none; }
 
-        /* Анимация клика */
+        /* Анимация +Число */
         .floating-text {
-            position: absolute; color: white; font-weight: bold; font-size: 28px;
-            pointer-events: none; animation: floatUp 0.6s ease-out forwards;
+            position: absolute; color: white; font-weight: bold; font-size: 32px;
+            pointer-events: none; animation: floatUp 0.7s ease-out forwards;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         @keyframes floatUp {
             0% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-100px); }
+            100% { opacity: 0; transform: translateY(-120px); }
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div id="level-display">Ранг: Новичок</div>
+        <div id="level-display">Ранг: Загрузка...</div>
         <div id="balance">0</div>
-        <div class="record-badge">🏆 Лучшее: <span id="highscore">0</span></div>
-        <div class="income-info">Прибыль: +<span id="pps">0</span> /сек</div>
+        <div class="record-badge">🏆 Рекорд за всё время: <span id="highscore">0</span></div>
+        <div class="income-info">Прибыль в сек: +<span id="pps">0</span></div>
     </div>
 
     <div class="coin-container" id="clicker">
@@ -119,85 +122,97 @@
 
     <div class="tabs">
         <button class="tab-btn active" id="tab-upg-btn" onclick="showTab('upgrades')">Бизнес</button>
-        <button class="tab-btn" id="tab-ward-btn" onclick="showTab('wardrobe')">Гардероб</button>
+        <button class="tab-btn" id="tab-ward-btn" onclick="showTab('wardrobe')">Одежда</button>
+        <button class="tab-btn" id="tab-friends-btn" onclick="showTab('friends')">Друзья</button>
     </div>
 
+    <!-- Вкладки контента -->
     <div id="tab-upgrades" class="shop-grid"></div>
     <div id="tab-wardrobe" class="shop-grid hidden"></div>
+    <div id="tab-friends" class="shop-grid hidden" style="grid-template-columns: 1fr;">
+        <div class="card" style="padding: 25px;">
+            <h3>Пригласи друзей</h3>
+            <p>Получи 1,500 монет мгновенно!</p>
+            <div style="font-size: 60px; margin: 15px;">👥</div>
+            <button class="btn-buy" onclick="inviteFriend()" style="margin-bottom: 12px; font-size: 16px;">Позвать друга</button>
+            <button class="btn-equip" onclick="claimFriendBonus()">Забрать бонус (+1500)</button>
+        </div>
+    </div>
 
     <script>
-        // Данные игры
-        let state = {
-            balance: parseFloat(localStorage.getItem('ht_bal')) || 0,
-            highscore: parseFloat(localStorage.getItem('ht_high')) || 0,
-            energy: parseFloat(localStorage.getItem('ht_eng')) || 1000,
-            pps: parseFloat(localStorage.getItem('ht_pps')) || 0,
-            currentSkin: localStorage.getItem('ht_skin') || '🐹',
-            ownedSkins: JSON.parse(localStorage.getItem('ht_owned')) || ['🐹'],
-            upgrades: JSON.parse(localStorage.getItem('ht_upg')) || {}
+        // --- 1. ЗАЩИТА ДАННЫХ И МИГРАЦИЯ ---
+        const SAVE_KEY = 'hamster_tapai_v1';
+        const DEFAULT_STATE = {
+            balance: 0,
+            highscore: 0,
+            energy: 1000,
+            pps: 0,
+            currentSkin: '🐹',
+            ownedSkins: ['🐹'],
+            upgrades: {},
+            lastOnline: Date.now()
         };
 
+        // Загрузка
+        let savedData = JSON.parse(localStorage.getItem(SAVE_KEY)) || {};
+        let state = { ...DEFAULT_STATE, ...savedData };
+
+        // --- 2. КОНФИГУРАЦИЯ ---
         const levels = [
             { name: "Новичок", threshold: 0 },
-            { name: "Бронзовый Тапер", threshold: 1000 },
-            { name: "Серебряный Магнат", threshold: 10000 },
-            { name: "Золотой Хомяк", threshold: 50000 },
-            { name: "Алмазный Босс", threshold: 200000 },
-            { name: "Крипто Король", threshold: 1000000 }
+            { name: "Тапер-Любитель", threshold: 2000 },
+            { name: "Бизнес-Хомяк", threshold: 15000 },
+            { name: "Директор Норки", threshold: 80000 },
+            { name: "Крипто-Магнат", threshold: 300000 },
+            { name: "Повелитель Семян", threshold: 1000000 }
         ];
 
         const shopItems = [
-            { id: "click_power", name: "⚡️ Сила тапа", baseCost: 100, income: 0, isClick: true },
-            { id: "it_team", name: "👨‍💻 IT Отдел", baseCost: 150, income: 1.5 },
-            { id: "marketing", name: "📢 Реклама", baseCost: 800, income: 8 },
-            { id: "factory", name: "🏭 Фабрика", baseCost: 5000, income: 45 }
+            { id: "click_power", name: "⚡️ Сила Тапа", baseCost: 40, income: 0, isClick: true },
+            { id: "it_dev", name: "💻 Разработчик", baseCost: 150, income: 2 },
+            { id: "marketing", name: "📊 Маркетинг", baseCost: 1000, income: 10 },
+            { id: "mining_farm", name: "⛏ Ферма", baseCost: 6000, income: 65 }
         ];
 
         const skins = [
-            { icon: '🐹', name: 'Обычный', price: 0 },
-            { icon: '🤵', name: 'Бизнесмен', price: 2000 },
-            { icon: '😎', name: 'Крутой', price: 15000 },
-            { icon: '👑', name: 'Король', price: 100000 },
-            { icon: '👽', name: 'Пришелец', price: 500000 }
+            { icon: '🐹', name: 'Классика', price: 0 },
+            { icon: '🤵', name: 'Бизнесмен', price: 1000 },
+            { icon: '😎', name: 'Крутой', price: 10000 },
+            { icon: '👑', name: 'Король', price: 50000 },
+            { icon: '👽', name: 'Пришелец', price: 150000 },
+            { icon: '🤖', name: 'Робо-Тап', price: 500000 }
         ];
 
-        function getLevelInfo() {
-            let current = levels[0];
-            levels.forEach(l => { if (state.highscore >= l.threshold) current = l; });
-            return current;
+        // --- 3. ЛОГИКА ИГРЫ ---
+        function getLevel() {
+            let res = levels[0];
+            levels.forEach(l => { if (state.highscore >= l.threshold) res = l; });
+            return res;
         }
 
         function getCost(item) {
-            const count = state.upgrades[item.id] || 0;
-            return Math.floor(item.baseCost * Math.pow(1.2, count));
+            const lv = state.upgrades[item.id] || 0;
+            return Math.floor(item.baseCost * Math.pow(1.28, lv));
         }
 
         function updateUI() {
-            const lvl = getLevelInfo();
-            const maxEng = 1000 + (levels.indexOf(lvl) * 500);
+            const currentLevel = getLevel();
+            const maxEng = 1000 + (levels.indexOf(currentLevel) * 500);
 
-            // Баланс и Рекорд
+            // Тексты
             document.getElementById('balance').innerText = Math.floor(state.balance).toLocaleString();
             if (state.balance > state.highscore) state.highscore = state.balance;
             document.getElementById('highscore').innerText = Math.floor(state.highscore).toLocaleString();
-            
-            // Тексты
-            document.getElementById('level-display').innerText = `Ранг: ${lvl.name}`;
+            document.getElementById('level-display').innerText = `Ранг: ${currentLevel.name}`;
             document.getElementById('pps').innerText = state.pps.toFixed(1);
             document.getElementById('energy-text').innerText = Math.floor(state.energy);
             document.getElementById('max-energy-text').innerText = maxEng;
-            document.getElementById('energy-fill').style.width = (state.energy / (maxEng / 100)) + '%';
             document.getElementById('hamster-view').innerText = state.currentSkin;
+            
+            // Прогресс-бар энергии
+            document.getElementById('energy-fill').style.width = (state.energy / (maxEng / 100)) + '%';
 
-            // Сохранение
-            localStorage.setItem('ht_bal', state.balance);
-            localStorage.setItem('ht_high', state.highscore);
-            localStorage.setItem('ht_eng', state.energy);
-            localStorage.setItem('ht_pps', state.pps);
-            localStorage.setItem('ht_skin', state.currentSkin);
-            localStorage.setItem('ht_owned', JSON.stringify(state.ownedSkins));
-            localStorage.setItem('ht_upg', JSON.stringify(state.upgrades));
-
+            localStorage.setItem(SAVE_KEY, JSON.stringify(state));
             renderShop();
             renderWardrobe();
         }
@@ -212,10 +227,10 @@
                 container.innerHTML += `
                     <div class="card">
                         <h3>${item.name}</h3>
-                        <p>${item.isClick ? '+ к тапу' : '+'+item.income+'/сек'} (Лвл ${lv})</p>
+                        <p>${item.isClick ? '+ Сила клика' : '+'+item.income+'/сек'} (Ур. ${lv})</p>
                         <button class="${canBuy ? 'btn-buy' : 'btn-disabled'}" 
                                 onclick="buyUpgrade('${item.id}')" ${!canBuy ? 'disabled' : ''}>
-                            💰 ${cost}
+                            💰 ${cost.toLocaleString()}
                         </button>
                     </div>`;
             });
@@ -229,14 +244,21 @@
                 const isEquipped = state.currentSkin === skin.icon;
                 const canBuy = state.balance >= skin.price;
                 
-                let btn = isEquipped ? `<button class="btn-disabled" disabled>Надето</button>` :
-                          isOwned ? `<button class="btn-equip" onclick="equipSkin('${skin.icon}')">Надеть</button>` :
-                          `<button class="${canBuy ? 'btn-buy' : 'btn-disabled'}" onclick="buySkin('${skin.icon}', ${skin.price})" ${!canBuy ? 'disabled' : ''}>💰 ${skin.price}</button>`;
+                let btn;
+                if (isEquipped) btn = `<button class="btn-disabled" disabled>Надето</button>`;
+                else if (isOwned) btn = `<button class="btn-equip" onclick="equipSkin('${skin.icon}')">Надеть</button>`;
+                else btn = `<button class="${canBuy ? 'btn-buy' : 'btn-disabled'}" onclick="buySkin('${skin.icon}', ${skin.price})" ${!canBuy ? 'disabled' : ''}>💰 ${skin.price.toLocaleString()}</button>`;
 
-                container.innerHTML += `<div class="card"><div style="font-size:40px">${skin.icon}</div><h3>${skin.name}</h3>${btn}</div>`;
+                container.innerHTML += `
+                    <div class="card">
+                        <div style="font-size:45px; margin-bottom:5px;">${skin.icon}</div>
+                        <h3>${skin.name}</h3>
+                        ${btn}
+                    </div>`;
             });
         }
 
+        // --- 4. ДЕЙСТВИЯ ---
         window.buyUpgrade = (id) => {
             const item = shopItems.find(i => i.id === id);
             const cost = getCost(item);
@@ -262,34 +284,54 @@
         window.showTab = (tab) => {
             document.getElementById('tab-upgrades').classList.toggle('hidden', tab !== 'upgrades');
             document.getElementById('tab-wardrobe').classList.toggle('hidden', tab !== 'wardrobe');
+            document.getElementById('tab-friends').classList.toggle('hidden', tab !== 'friends');
             document.getElementById('tab-upg-btn').classList.toggle('active', tab === 'upgrades');
             document.getElementById('tab-ward-btn').classList.toggle('active', tab === 'wardrobe');
+            document.getElementById('tab-friends-btn').classList.toggle('active', tab === 'friends');
         };
 
+        window.inviteFriend = () => {
+            const text = encodeURIComponent("Заходи в Хамстер Тапай! Давай кликать вместе!");
+            window.open(`https://t.me{text}`, '_blank');
+        };
+
+        window.claimFriendBonus = () => {
+            state.balance += 1500;
+            updateUI();
+            alert("Бонус 1,500 монет зачислен!");
+        };
+
+        // Клик
         document.getElementById('clicker').addEventListener('click', (e) => {
-            const tapValue = 1 + (state.upgrades['click_power'] || 0);
+            const power = 1 + (state.upgrades['click_power'] || 0);
             if (state.energy >= 1) {
-                state.balance += tapValue;
+                state.balance += power;
                 state.energy -= 1;
-                showPlus(e.clientX, e.clientY, tapValue);
+                showFloat(e.clientX, e.clientY, power);
                 updateUI();
             }
         });
 
-        function showPlus(x, y, val) {
+        function showFloat(x, y, val) {
             const el = document.createElement('div');
-            el.className = 'floating-text';
-            el.innerText = `+${val}`;
+            el.className = 'floating-text'; el.innerText = `+${val}`;
             el.style.left = x + 'px'; el.style.top = y + 'px';
             document.body.appendChild(el);
-            setTimeout(() => el.remove(), 600);
+            setTimeout(() => el.remove(), 700);
         }
 
-        // Игровой цикл
+        // --- 5. ЦИКЛ ИГРЫ (10 раз в сек) ---
         setInterval(() => {
+            // Пассивный доход
             state.balance += (state.pps / 10);
-            const maxEng = 1000 + (levels.indexOf(getLevelInfo()) * 500);
-            if (state.energy < maxEng) state.energy = Math.min(maxEng, state.energy + 1);
+            
+            // Реген энергии
+            const currentLevel = getLevel();
+            const maxEng = 1000 + (levels.indexOf(currentLevel) * 500);
+            if (state.energy < maxEng) {
+                state.energy = Math.min(maxEng, state.energy + 1.5);
+            }
+            
             updateUI();
         }, 100);
 
@@ -297,4 +339,4 @@
     </script>
 </body>
 </html>
-
+    

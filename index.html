@@ -1,42 +1,81 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Phone Clicker</title>
-    <style>
-        body { 
-            background: #111; color: #fff; font-family: sans-serif; 
-            display: flex; flex-direction: column; align-items: center; 
-            justify-content: center; height: 100vh; margin: 0; overflow: hidden;
-        }
-        #score { font-size: 50px; margin-bottom: 20px; color: #ffd700; }
-        #coin { 
-            width: 250px; height: 250px; background: radial-gradient(#ffe082, #ffa000); 
-            border-radius: 50%; border: 10px solid #fff; 
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 100px; cursor: pointer; transition: transform 0.05s;
-        }
-        #coin:active { transform: scale(0.9); }
-    </style>
-</head>
-<body>
-    <div id="score">0</div>
-    <div id="coin">🔘</div>
+import asyncio
+import sqlite3
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-    <script>
-        let count = 0;
-        const score = document.getElementById('score');
-        const coin = document.getElementById('coin');
+# Вставь сюда свой токен
+TOKEN = "ТВОЙ_ТОКЕН_ОТ_BOTFATHER"
 
-        // Вибрация и звук для телефона
-        coin.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // чтобы экран не дергался при нажатии
-            count++;
-            score.innerText = count;
-            if (navigator.vibrate) navigator.vibrate(50); // телефон слегка дрожит
-        });
-    </script>
-</body>
-</html>
+bot = Bot(token=TOKEN)
+dp = Dispatcher()
+
+# Работа с базой данных
+def init_db():
+    conn = sqlite3.connect("tapper_db.sqlite")
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY,
+            clicks INTEGER DEFAULT 0
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+def get_clicks(user_id):
+    conn = sqlite3.connect("tapper_db.sqlite")
+    cursor = conn.cursor()
+    cursor.execute("SELECT clicks FROM users WHERE user_id = ?", (user_id,))
+    result = cursor.fetchone()
+    conn.close()
+    return result[0] if result else 0
+
+def add_click(user_id):
+    conn = sqlite3.connect("tapper_db.sqlite")
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO users (user_id, clicks) VALUES (?, 1)
+        ON CONFLICT(user_id) DO UPDATE SET clicks = clicks + 1
+    """, (user_id,))
+    conn.commit()
+    conn.close()
+
+# Клавиатура с кнопкой-тапкой
+def get_game_kb(count):
+    builder = InlineKeyboardBuilder()
+    builder.button(text=f"👟 ТАП! (Всего: {count})", callback_data="tap")
+    return builder.as_markup()
+
+@dp.message(Command("start"))
+async def start_cmd(message: types.Message):
+    user_id = message.from_user.id
+    count = get_clicks(user_id)
+    await message.answer(
+        f"Привет! Это игра-тапалка.\nНажимай на кнопку ниже!",
+        reply_markup=get_game_kb(count)
+    )
+
+@dp.callback_query(F.data == "tap")
+async def tap_handler(callback: types.Callback_query):
+    user_id = callback.from_user.id
+    add_click(user_id)
+    new_count = get_clicks(user_id)
+    
+    # Обновляем сообщение, чтобы изменить счетчик на кнопке
+    try:
+        await callback.message.edit_reply_markup(
+            reply_markup=get_game_kb(new_count)
+        )
+    except:
+        # Если кликают слишком быстро, Telegram может выдать ошибку — игнорируем её
+        pass
+    await callback.answer()
+
+async def main():
+    init_db()
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+

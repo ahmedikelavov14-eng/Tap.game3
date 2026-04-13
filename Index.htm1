@@ -2,41 +2,121 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Phone Clicker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Moy Tap Game</title>
+    <script src="https://telegram.org"></script>
     <style>
-        body { 
-            background: #111; color: #fff; font-family: sans-serif; 
-            display: flex; flex-direction: column; align-items: center; 
-            justify-content: center; height: 100vh; margin: 0; overflow: hidden;
+        body {
+            background: radial-gradient(circle, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            user-select: none;
         }
-        #score { font-size: 50px; margin-bottom: 20px; color: #ffd700; }
-        #coin { 
-            width: 250px; height: 250px; background: radial-gradient(#ffe082, #ffa000); 
-            border-radius: 50%; border: 10px solid #fff; 
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-            display: flex; align-items: center; justify-content: center; 
-            font-size: 100px; cursor: pointer; transition: transform 0.05s;
+
+        #score {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 204, 0, 0.6);
         }
-        #coin:active { transform: scale(0.9); }
+
+        .coin-container {
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .coin-container:active {
+            transform: scale(0.95);
+        }
+
+        #coin {
+            width: 250px;
+            height: 250px;
+            background: linear-gradient(145deg, #ffcc00, #ff9900);
+            border-radius: 50%;
+            box-shadow: 0 0 50px rgba(255, 153, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 8px solid #e68a00;
+        }
+
+        #coin::after {
+            content: "🪙";
+            font-size: 120px;
+        }
+
+        .tap-animation {
+            position: absolute;
+            color: #ffcc00;
+            font-size: 24px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: moveUp 0.8s ease-out forwards;
+        }
+
+        @keyframes moveUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-100px); }
+        }
     </style>
 </head>
 <body>
+
     <div id="score">0</div>
-    <div id="coin">🔘</div>
+    
+    <div class="coin-container" id="coin-click">
+        <div id="coin"></div>
+    </div>
 
     <script>
-        let count = 0;
-        const score = document.getElementById('score');
-        const coin = document.getElementById('coin');
+        const tg = window.Telegram.WebApp;
+        const coin = document.getElementById('coin-click');
+        const scoreElement = document.getElementById('score');
+        
+        // Загружаем очки из памяти браузера
+        let score = parseInt(localStorage.getItem('tapScore')) || 0;
+        scoreElement.textContent = score;
 
-        // Вибрация и звук для телефона
-        coin.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // чтобы экран не дергался при нажатии
-            count++;
-            score.innerText = count;
-            if (navigator.vibrate) navigator.vibrate(50); // телефон слегка дрожит
+        tg.expand(); // Разворачиваем игру на весь экран
+
+        coin.addEventListener('click', (e) => {
+            score++;
+            scoreElement.textContent = score;
+            
+            // Сохраняем результат
+            localStorage.setItem('tapScore', score);
+
+            // Вибрация (работает только в Telegram)
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+
+            // Анимация вылетающей цифры "+1"
+            createTapAnimation(e.clientX, e.clientY);
         });
+
+        function createTapAnimation(x, y) {
+            const tap = document.createElement('div');
+            tap.className = 'tap-animation';
+            tap.textContent = '+1';
+            tap.style.left = x + 'px';
+            tap.style.top = y + 'px';
+            document.body.appendChild(tap);
+
+            setTimeout(() => {
+                tap.remove();
+            }, 800);
+        }
     </script>
 </body>
 </html>
+
